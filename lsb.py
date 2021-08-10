@@ -1,16 +1,25 @@
 # -*- coding: UTF-8 -*-
 from PIL import Image
-import sys,time
-print('图片藏文字与读取Demo    3.0ProPlus++\nby\tWZQ|帅in逼|13905069\n\n仅支持纯英文，不支持字符的编码！\n\n\n帮助：\n在控制台中使用"python lsb.py 原图片目录 编码后图片目录 编码内容"进行编码\n使用"python lsb.py 编码后文件目录"进行解码\n\n')
+import sys,time,os,bitstring,math
+
+print('图片藏文字与读取Demo    4.0ProPlus++MaxUltra \nby\tWZQ|帅in逼|13905069\n\n现仅支持藏文件！\n\n\n帮助：\n在控制台中使用"python lsb.py 原图片目录 编码后图片目录 待编码文件目录"进行编码\n使用"python lsb.py 待解码文件目录 解码后文件目录(不含文件扩展名)"进行解码\n\n')
 #0 1 2 3 4 5 6 7 8 9
 #用用留留 用 用留留用用
 low_use=["0","1","4","5","8","9"]
 low_unuse=["2","3","6","7"]
 def image_code(sb:str,sbb:str,gwait:str):
+    wait=[]
+    #将文件后缀名存入
     tmp=[]
-    for c in gwait:
-        tmp.append(bin(ord(c)).replace('0b', ''))
+    for c in os.path.splitext(gwait)[1]:
+        tmp.append(bin(ord(c)).replace('0b', '').zfill(7))
+    if len(tmp)<10:
+        while len(tmp)<10:
+            tmp.append("0000000")
     wait=list(str(''.join(tmp)))
+    sd=open(gwait,"rb")
+    wait.extend(bitstring.BitStream(bytes=sd.read()).bin)
+    for i in range(len(wait)):wait[i]=str(int(wait[i]))
     print("编码成功，正在生成图像......")
     file=Image.open(sb)
     loaded=file.load()
@@ -59,7 +68,7 @@ def image_code(sb:str,sbb:str,gwait:str):
     print("保存成功！正在关闭文件......")
     file.close()
     return sbb
-def image_decode(sb:str):
+def image_decode(sb:str,sbb:str):
     file=Image.open(sb)
     print("成功打开图片，正在读取......")
     loaded=file.load()
@@ -79,20 +88,29 @@ def image_decode(sb:str):
                     tmp[len(tmp)-1]=tmp[len(tmp)-1]+str(int(g[len(g)-1])%2)
             if exit:break
         if exit:break
-    print("读取成功，正在分析......")
-    for i in range(len(tmp)-1,-1,-1):
-        if int(tmp[i])==0:
-            del tmp[i]
+    file.close()
+    print("读取成功，已关闭原文件。正在分析文件扩展名......")
+    text=tmp[0:10]
+    main="".join(tmp[10:len(tmp)])
+    main=main.zfill(math.ceil(len(main)/8)*8)
+    for i in range(9,-1,-1):
+        if int(text[i])==0:
+            del text[i]
         else:
             break
-    for i in range(len(tmp)):
-        tmp[i]=chr(int(tmp[i],2))
-    strla="".join(tmp)
-    print("分析成功，正在关闭文件.....")
-    file.close()
-    return strla
-if len(sys.argv)==2:
-    print("保存在图片里面的话是："+image_decode(sys.argv[1]))
+    textt=""
+    for i in range(len(text)):
+        textt=textt+chr(int(text[i],2))
+    print("分析成功，你的文件扩展名为："+textt+",保存的文件将会按此格式进行保存")
+    print("正在保存文件.....")
+    newfile=open(sbb+textt,"wb")
+    newfile.write(bitstring.BitStream(bin=main).bytes)
+    newfile.close()
+    print("保存成功！感谢您的使用！")
+    return 0
+if len(sys.argv)==3:
+    if image_decode(sys.argv[1],sys.argv[2]):
+        print("解码成功！")
 elif len(sys.argv)==4:
     image_code(sys.argv[1],sys.argv[2],sys.argv[3])
 else:
